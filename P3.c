@@ -11,10 +11,10 @@
 /*
   Function Declarations for builtin shell commands:
  */
-int lsh_cd(char **args);
-int lsh_help(char **args);
+int cd(char **args);
+int help(char **args);
 int myquit(char **args);
-int lsh_launch(char **args);
+int launch(char **args);
 int myclear(char **args);
 int myenviron(char **args);
 int mydir();
@@ -32,14 +32,14 @@ char *builtin_str[] = {
     "mydir"};
 
 int (*builtin_func[])(char **) = {
-    &lsh_cd,
-    &lsh_help,
+    &cd,
+    &help,
     &myquit,
     &myclear,
     &myenviron,
     &mydir};
 
-int lsh_num_builtins()
+int num_builtins()
 {
   return sizeof(builtin_str) / sizeof(char *);
 }
@@ -66,11 +66,11 @@ int mydir(char **args)
 {
   return 1;
 }
-int lsh_cd(char **args)
+int cd(char **args)
 {
   if (args[1] == NULL)
   {
-    fprintf(stderr, "lsh: expected argument to \"cd\"\n");
+    fprintf(stderr, ": expected argument to \"cd\"\n");
   }
   else
   {
@@ -82,14 +82,14 @@ int lsh_cd(char **args)
   return 1;
 }
 
-int lsh_help(char **args)
+int help(char **args)
 {
   int i;
-  printf("Aaron Davidge LSH\n");
+  printf("Aaron Davidge\n");
   printf("Type program names and arguments, and hit enter.\n");
   printf("The following are built in:\n");
 
-  for (i = 0; i < lsh_num_builtins(); i++)
+  for (i = 0; i < num_builtins(); i++)
   {
     printf("  %s\n", builtin_str[i]);
   }
@@ -109,7 +109,7 @@ int myenviron(char **args)
     printf("%s\n", *s);
   }
 
-  return 0;
+  return 1;
 }
 
 int myquit(char **args)
@@ -118,7 +118,7 @@ int myquit(char **args)
   return 0;
 }
 
-int lsh_execute(char **args)
+int execute(char **args)
 {
   int i;
 
@@ -128,7 +128,7 @@ int lsh_execute(char **args)
     return 1;
   }
 
-  for (i = 0; i < lsh_num_builtins(); i++)
+  for (i = 0; i < num_builtins(); i++)
   {
     if (strcmp(args[0], builtin_str[i]) == 0)
     {
@@ -136,10 +136,10 @@ int lsh_execute(char **args)
     }
   }
 
-  return lsh_launch(args);
+  return launch(args);
 }
 
-int lsh_launch(char **args)
+int launch(char **args)
 {
   pid_t pid, wpid;
   int status;
@@ -173,8 +173,7 @@ int lsh_launch(char **args)
 
 char destination[100];
 
-
-char **lsh_split_line(char *line)
+char **split_line(char *line)
 {
   int bufsize = LSH_TOK_BUFSIZE, position = 0;
   char **tokens = malloc(bufsize * sizeof(char *));
@@ -207,7 +206,7 @@ char **lsh_split_line(char *line)
     token = strtok(NULL, LSH_TOK_DELIM);
   }
   if(strcmp(tokens[0],"mydir") == 0){
-    strcat(destination,"ls -al ");
+    strcat(destination,"sudo ls -al ");
     strcat(destination,tokens[1]);
     system(destination);
     
@@ -219,7 +218,7 @@ char **lsh_split_line(char *line)
   return tokens;
 }
 
-char *lsh_read_line(void)
+char *read_line(void)
 {
   char *line = NULL;
   size_t bufsize = 0; // have getline allocate a buffer for us
@@ -240,7 +239,7 @@ char *lsh_read_line(void)
   return line;
 }
 
-void lsh_loop(void)
+void main_loop(void)
 {
   char *line;
   char **args;
@@ -249,9 +248,9 @@ void lsh_loop(void)
   do
   {
     printf("> ");
-    line = lsh_read_line();
-    args = lsh_split_line(line);
-    status = lsh_execute(args);
+    line = read_line();
+    args = split_line(line);
+    status = execute(args);
 
     free(line);
     free(args);
@@ -263,7 +262,7 @@ int main(int argc, char **argv)
   // Load config files, if any.
 
   // Run command loop.
-  lsh_loop();
+  main_loop();
 
   // Perform any shutdown/cleanup.
 
